@@ -1,136 +1,133 @@
-import streamlit as st
-import pickle
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+import os
 
-# Page configuration
+# Ensure DB is created if not exists
+if not os.path.exists("db"):
+    import subprocess
+    subprocess.run(["python", "rag/create_db.py"])
+    
+import streamlit as st
+from agent.agent import app as agent_app
+
 st.set_page_config(
-    page_title="News Credibility Analyzer",
-    page_icon="📰",
+    page_title="AI News Credibility Analyzer",
     layout="wide"
 )
 
-# Load model
-@st.cache_resource
-def load_model():
-    model = pickle.load(open("model.pkl", "rb"))
-    vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
-    return model, vectorizer
+# ================= SIDEBAR =================
+with st.sidebar:
+    st.title("🧠 AI News Credibility System")
 
-model, vectorizer = load_model()
+    st.markdown("### 📊 Model Information")
+    st.markdown("""
+**Model Type:** Logistic Regression  
+**Feature Extraction:** TF-IDF  
+**Accuracy:** 96.4%  
 
-# Header
-st.title("📰 Intelligent News Credibility Analyzer")
-st.markdown("AI-powered system for detecting fake and credible news using Machine Learning")
-
-# Sidebar
-st.sidebar.title("Model Information")
-
-st.sidebar.metric("Model Type", "Logistic Regression")
-st.sidebar.metric("Feature Extraction", "TF-IDF")
-st.sidebar.metric("Model Accuracy", "96.4%")
-
-st.sidebar.markdown("---")
-st.sidebar.write("Developed using:")
-st.sidebar.write("• Scikit-learn")
-st.sidebar.write("• Streamlit")
-st.sidebar.write("• NLP")
-
-# Main layout
-col1, col2 = st.columns([2,1])
-
-with col1:
-
-    st.subheader("Enter News Article")
-
-    text = st.text_area(
-        "",
-        height=200,
-        placeholder="Paste news article text here..."
-    )
-
-    analyze = st.button("Analyze Credibility", use_container_width=True)
-
-
-with col2:
-
-    st.subheader("System Status")
-
-    st.success("Model Loaded Successfully")
-
-    st.info("Ready for prediction")
-
-
-# Prediction section
-if analyze and text.strip() != "":
-
-    vec = vectorizer.transform([text])
-
-    prediction = model.predict(vec)[0]
-
-    probabilities = model.predict_proba(vec)[0]
-
-    confidence = max(probabilities) * 100
+**Developed using:**
+- Scikit-learn  
+- Streamlit  
+- NLP  
+""")
 
     st.markdown("---")
-    st.subheader("Prediction Results")
 
-    col3, col4 = st.columns(2)
+    st.markdown("### 🤖 Milestone 2 (Agentic AI)")
+    st.markdown("""
+- LangGraph Agent Workflow  
+- Risk Analysis Engine  
+- Retrieval-Augmented Generation (RAG)  
+- Explainable AI Output  
+""")
 
-    with col3:
+    st.markdown("---")
 
-        if prediction == 1:
-            st.success("Credible News")
-        else:
-            st.error("Fake News Detected")
+    st.markdown("### ⚙️ System Status")
+    st.success("Model Loaded Successfully")
+    st.info("Agent Ready for Analysis")
 
-        st.metric("Confidence Score", f"{confidence:.2f}%")
+    st.markdown("---")
 
-    with col4:
+    st.markdown("### ⚡ Tips")
+    st.write(
+        "• Enter one complete news article\n"
+        "• Avoid mixing multiple articles\n"
+        "• Works best with structured text"
+    )
 
-        st.write("Prediction Probability")
+# ================= MAIN =================
+st.title("🧠 Intelligent News Credibility Analyzer")
 
-        labels = ["Fake", "Credible"]
-        values = probabilities
+st.markdown("""
+AI-powered system for detecting **Fake, Credible, and Suspicious news**  
+using **Machine Learning + Agentic AI + RAG**
+""")
 
-        fig, ax = plt.subplots()
+text = st.text_area("Enter News Article", height=180, placeholder="Paste news article here...")
 
-        ax.bar(labels, values)
+if st.button("Analyze"):
 
-        ax.set_ylabel("Probability")
+    if text.strip() == "":
+        st.warning("Please enter some text.")
+        st.stop()
 
-        st.pyplot(fig)
+    # Prevent multiple articles
+    lines = [line for line in text.split("\n") if line.strip() != ""]
+    if len(lines) > 8:
+        st.warning("Please enter only ONE news article at a time.")
+        st.stop()
 
+    result = agent_app.invoke({"text": text})
+    report = result["report"]
 
-    # Confidence gauge style bar
-    st.subheader("Confidence Meter")
+    # ===== METRICS =====
+    col1, col2, col3 = st.columns(3)
 
-    st.progress(int(confidence))
+    col1.metric("Verdict", report["verdict"])
+    col2.metric("Confidence", report["confidence_score"])
+    col3.metric("Risk Count", len(report["risk_factors"]))
 
+    st.progress(report["confidence_score"])
 
-    # Feature importance (top words)
-    st.subheader("Key Feature Importance")
+    st.markdown("---")
 
-    feature_names = vectorizer.get_feature_names_out()
+    # ===== TABS =====
+    tab1, tab2, tab3 = st.tabs(["📄 Summary", "🔍 Analysis", "⚙️ Details"])
 
-    coef = model.coef_[0]
+    # ===== SUMMARY =====
+    with tab1:
+        st.subheader("📄 Summary")
+        st.write(report["summary"])
 
-    top_indices = np.argsort(coef)[-10:]
+    # ===== ANALYSIS =====
+    with tab2:
+        col1, col2 = st.columns(2)
 
-    top_features = feature_names[top_indices]
+        with col1:
+            st.subheader("⚠️ Risk Factors")
+            if report["risk_factors"]:
+                for r in report["risk_factors"]:
+                    st.write("•", r)
+            else:
+                st.write("No significant risks detected.")
 
-    top_values = coef[top_indices]
+            st.subheader("🧠 Explanation")
+            st.write(report["explanation"])
 
-    fig2, ax2 = plt.subplots()
+        with col2:
+            st.subheader("🔍 Fact Check (RAG)")
+            if report["fact_check"]:
+                for f in report["fact_check"]:
+                    st.write("•", f)
+            else:
+                st.write("No related fact-checks found.")
 
-    ax2.barh(top_features, top_values)
+    # ===== DETAILS =====
+    with tab3:
+        st.subheader("📊 Pattern Summary")
+        st.info(report["pattern_summary"])
 
-    ax2.set_xlabel("Importance")
+        st.subheader("🌐 Verification")
+        st.write(report["verification"])
 
-    st.pyplot(fig2)
-
-
-# Footer
-st.markdown("---")
-st.markdown("Built with Machine Learning and Natural Language Processing")
+        st.subheader("⚖️ Disclaimer")
+        st.warning(report["disclaimer"])
