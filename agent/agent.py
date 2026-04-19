@@ -1,46 +1,19 @@
-from langgraph.graph import StateGraph
-
 from model.predict import predict_news
 from agent.risk_analyzer import analyze_risk
 from rag.retriever import retrieve
 from agent.llm import generate_report
 
+def run_agent(text):
 
-def node_ml(state):
-    state["ml"] = predict_news(state["text"])
-    return state
+    ml = predict_news(text)
+    risks = analyze_risk(text)
+    facts = retrieve(text)
 
+    report = generate_report(text, risks, facts, ml)
 
-def node_risk(state):
-    state["risks"] = analyze_risk(state["text"])
-    return state
-
-
-def node_rag(state):
-    state["facts"] = retrieve(state["text"])
-    return state
-
-
-def node_llm(state):
-    state["report"] = generate_report(
-        state["text"],
-        state["risks"],
-        state["facts"],
-        state["ml"]
-    )
-    return state
-
-
-graph = StateGraph(dict)
-
-graph.add_node("ml", node_ml)
-graph.add_node("risk", node_risk)
-graph.add_node("rag", node_rag)
-graph.add_node("llm", node_llm)
-
-graph.set_entry_point("ml")
-graph.add_edge("ml", "risk")
-graph.add_edge("risk", "rag")
-graph.add_edge("rag", "llm")
-
-app = graph.compile()
+    return {
+        "ml": ml,
+        "risks": risks,
+        "facts": facts,
+        "report": report
+    }

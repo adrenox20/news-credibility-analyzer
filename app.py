@@ -1,28 +1,15 @@
 import streamlit as st
-from agent.agent import app as agent_app
+from agent.agent import run_agent
 
 st.set_page_config(page_title="AI News Credibility Analyzer", layout="wide")
 
-# ===== SIDEBAR =====
+# Sidebar
 with st.sidebar:
     st.title("🧠 AI News Credibility System")
-
-    st.markdown("### 📊 Model Info")
-    st.write("""
-    Logistic Regression + TF-IDF  
-    Accuracy: 96.4%
-    """)
-
-    st.markdown("### 🤖 Milestone 2")
-    st.write("""
-    - Agentic AI (LangGraph)
-    - Risk Analysis
-    - Lightweight RAG
-    """)
-
+    st.write("ML + Agent + Chroma RAG")
     st.success("System Ready")
 
-# ===== MAIN =====
+# Main UI
 st.title("🧠 Intelligent News Credibility Analyzer")
 
 text = st.text_area("Enter News Article", height=180)
@@ -33,7 +20,7 @@ if st.button("Analyze"):
         st.warning("Enter text")
         st.stop()
 
-    result = agent_app.invoke({"text": text})
+    result = run_agent(text)
     report = result["report"]
 
     col1, col2, col3 = st.columns(3)

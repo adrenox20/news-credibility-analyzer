@@ -25,7 +25,6 @@ def load_db():
         embedding_function=embedding
     )
 
-# Lazy init
 _db = None
 
 def get_db():

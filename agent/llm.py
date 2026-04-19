@@ -4,28 +4,27 @@ def generate_report(article, risks, facts, ml_result):
 
     if len(risks) == 0:
         verdict = "Credible"
-    elif "Sensitive claim" in str(risks):
+    elif "Sensitive claim" in risks:
         verdict = "Fake"
-    elif len(risks) >= 2:
+    elif "Conspiracy language" in risks:
+        verdict = "Suspicious"
+    elif "Unverified news" in risks:
+        verdict = "Suspicious"
+    elif len(risks) >= 3:
         verdict = "Fake"
     else:
         verdict = "Suspicious"
-
-    explanation = f"""
-Risks: {', '.join(risks) if risks else 'None'}
-ML Prediction: {label} ({round(prob,2)})
-"""
 
     return {
         "summary": article[:120],
         "risk_factors": risks,
         "pattern_summary": f"{len(risks)} risks detected",
         "fact_check": facts,
-        "verification": f"{len(facts)} references",
+        "verification": f"{len(facts)} references retrieved",
         "verdict": verdict,
         "confidence_score": round(prob, 2),
         "confidence_level": "High" if prob > 0.8 else "Medium",
-        "explanation": explanation,
+        "explanation": f"ML predicted {label} with confidence {round(prob,2)}. Risks: {', '.join(risks) if risks else 'None'}",
         "probabilities": probs.tolist(),
         "disclaimer": "Verify with trusted sources"
     }
