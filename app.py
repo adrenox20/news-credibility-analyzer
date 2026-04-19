@@ -1,10 +1,9 @@
 import os
+import subprocess
 
-# Ensure DB is created if not exists
 if not os.path.exists("db"):
-    import subprocess
     subprocess.run(["python", "rag/create_db.py"])
-    
+
 import streamlit as st
 from agent.agent import app as agent_app
 
