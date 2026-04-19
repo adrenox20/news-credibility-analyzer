@@ -1,42 +1,23 @@
-import os
-from langchain_community.vectorstores import Chroma
-from rag.simple_embeddings import SimpleEmbedding
+def retrieve_facts(text):
 
-DB_DIR = "db"
+    facts = []
 
-def build_db():
-    with open("rag/fact_checks.txt", "r") as f:
-        texts = [t.strip() for t in f.readlines() if t.strip()]
+    if "covid" in text.lower():
+        facts.append("COVID vaccine does not cause infertility – WHO")
 
-    embedding = SimpleEmbedding()
+    if "moon" in text.lower():
+        facts.append("Moon landing was real – NASA")
 
-    db = Chroma.from_texts(
-        texts,
-        embedding,
-        persist_directory=DB_DIR
-    )
-    db.persist()
-    return db
+    if "5g" in text.lower():
+        facts.append("5G does not spread viruses – scientific consensus")
 
-def load_db():
-    embedding = SimpleEmbedding()
-    return Chroma(
-        persist_directory=DB_DIR,
-        embedding_function=embedding
-    )
+    if "climate" in text.lower():
+        facts.append("Climate change is real – IPCC")
 
-_db = None
+    if not facts:
+        facts = [
+            "No direct fact match found",
+            "Cross-check with trusted sources"
+        ]
 
-def get_db():
-    global _db
-    if _db is None:
-        if not os.path.exists(DB_DIR):
-            _db = build_db()
-        else:
-            _db = load_db()
-    return _db
-
-def retrieve(query):
-    db = get_db()
-    results = db.similarity_search(query, k=3)
-    return [doc.page_content for doc in results]
+    return facts

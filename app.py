@@ -1,49 +1,42 @@
 import streamlit as st
-from agent.agent import run_agent
+from agent.workflow import run_agent
 
-st.set_page_config(page_title="AI News Credibility Analyzer", layout="wide")
+st.set_page_config(page_title="Agentic News Analyzer", layout="wide")
 
-# Sidebar
-with st.sidebar:
-    st.title("🧠 AI News Credibility System")
-    st.write("ML + Agent + Chroma RAG")
-    st.success("System Ready")
+st.title("🧠 Intelligent News Credibility & Misinformation Analyzer")
 
-# Main UI
-st.title("🧠 Intelligent News Credibility Analyzer")
-
-text = st.text_area("Enter News Article", height=180)
+text = st.text_area("Enter News Article")
 
 if st.button("Analyze"):
 
-    if not text.strip():
-        st.warning("Enter text")
-        st.stop()
+    report = run_agent(text)
 
-    result = run_agent(text)
-    report = result["report"]
+    col1, col2 = st.columns(2)
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Verdict", report["verdict"])
-    col2.metric("Confidence", report["confidence_score"])
-    col3.metric("Risk Count", len(report["risk_factors"]))
-
-    st.progress(report["confidence_score"])
-
-    tab1, tab2, tab3 = st.tabs(["Summary", "Analysis", "Details"])
-
-    with tab1:
+    with col1:
+        st.subheader("📄 Summary")
         st.write(report["summary"])
 
-    with tab2:
-        st.subheader("Risks")
+        st.subheader("⚠️ Risk Factors")
         for r in report["risk_factors"]:
             st.write("•", r)
 
-        st.subheader("Explanation")
-        st.write(report["explanation"])
+        st.subheader("🧠 Analysis")
+        st.write(report["analysis"])
 
-    with tab3:
-        st.write(report["pattern_summary"])
-        st.write(report["verification"])
-        st.write(report["disclaimer"])
+    with col2:
+        st.subheader("🔍 Fact Check")
+        for f in report["fact_check"]:
+            st.write("•", f)
+
+        st.subheader("📊 Verdict")
+        st.metric("Verdict", report["verdict"])
+        st.metric("Confidence (%)", report["confidence_score"])
+
+        st.progress(report["confidence_score"] / 100)
+
+    st.subheader("🤖 LLM Analysis")
+    st.write(report["llm_analysis"])
+
+    st.subheader("⚖️ Disclaimer")
+    st.warning(report["disclaimer"])

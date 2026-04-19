@@ -1,20 +1,26 @@
-def analyze_risk(text):
-    risks = []
-    t = text.lower()
+import requests
+import os
 
-    if "secret" in t:
-        risks.append("Conspiracy language")
+API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-small"
 
-    if "breaking" in t:
-        risks.append("Clickbait style")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-    if len(text.split()) <= 5:
-        risks.append("Very short claim")
+headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
 
-    if "dead" in t:
-        risks.append("Sensitive claim")
+def call_llm(prompt):
 
-    if "unclear" in t or "not confirmed" in t:
-        risks.append("Unverified news")
+    try:
+        response = requests.post(
+            API_URL,
+            headers=headers,
+            json={"inputs": prompt},
+            timeout=10
+        )
 
-    return risks
+        if response.status_code == 200:
+            return response.json()[0]["generated_text"]
+
+        return None
+
+    except:
+        return None

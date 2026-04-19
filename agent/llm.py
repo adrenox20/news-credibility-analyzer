@@ -1,30 +1,26 @@
-def generate_report(article, risks, facts, ml_result):
+import requests
+import os
 
-    label, prob, probs = ml_result
+API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-small"
 
-    if len(risks) == 0:
-        verdict = "Credible"
-    elif "Sensitive claim" in risks:
-        verdict = "Fake"
-    elif "Conspiracy language" in risks:
-        verdict = "Suspicious"
-    elif "Unverified news" in risks:
-        verdict = "Suspicious"
-    elif len(risks) >= 3:
-        verdict = "Fake"
-    else:
-        verdict = "Suspicious"
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-    return {
-        "summary": article[:120],
-        "risk_factors": risks,
-        "pattern_summary": f"{len(risks)} risks detected",
-        "fact_check": facts,
-        "verification": f"{len(facts)} references retrieved",
-        "verdict": verdict,
-        "confidence_score": round(prob, 2),
-        "confidence_level": "High" if prob > 0.8 else "Medium",
-        "explanation": f"ML predicted {label} with confidence {round(prob,2)}. Risks: {', '.join(risks) if risks else 'None'}",
-        "probabilities": probs.tolist(),
-        "disclaimer": "Verify with trusted sources"
-    }
+headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+
+def call_llm(prompt):
+
+    try:
+        response = requests.post(
+            API_URL,
+            headers=headers,
+            json={"inputs": prompt},
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            return response.json()[0]["generated_text"]
+
+        return None
+
+    except:
+        return None

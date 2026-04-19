@@ -1,11 +1,16 @@
+import os
 import joblib
 
-model = joblib.load("model/model.pkl")
-vectorizer = joblib.load("model/vectorizer.pkl")
+BASE_DIR = os.path.dirname(__file__)
 
+model = joblib.load(os.path.join(BASE_DIR, "model.pkl"))
+vectorizer = joblib.load(os.path.join(BASE_DIR, "vectorizer.pkl"))
 
 def predict_news(text):
-    X = vectorizer.transform([text])
-    pred = model.predict(X)[0]
-    prob = model.predict_proba(X)[0]
-    return pred, max(prob), prob
+    vec = vectorizer.transform([text])
+    pred = model.predict(vec)[0]
+    prob = model.predict_proba(vec).max()
+
+    label = "Credible" if pred == 1 else "Fake"
+
+    return label, prob
