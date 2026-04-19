@@ -1,16 +1,25 @@
+import pickle
 import os
-import joblib
 
-BASE_DIR = os.path.dirname(__file__)
+# Get correct path (VERY IMPORTANT)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-model = joblib.load(os.path.join(BASE_DIR, "model.pkl"))
-vectorizer = joblib.load(os.path.join(BASE_DIR, "vectorizer.pkl"))
+# Load model + vectorizer
+model = pickle.load(open(os.path.join(BASE_DIR, "model.pkl"), "rb"))
+vectorizer = pickle.load(open(os.path.join(BASE_DIR, "vectorizer.pkl"), "rb"))
 
-def predict_news(text):
+
+def predict_credibility(text):
     vec = vectorizer.transform([text])
-    pred = model.predict(vec)[0]
-    prob = model.predict_proba(vec).max()
 
-    label = "Credible" if pred == 1 else "Fake"
+    probabilities = model.predict_proba(vec)[0]
 
-    return label, prob
+    credible_prob = probabilities[1]
+    confidence = max(probabilities) * 100
+
+    if credible_prob > 0.6:
+        label = "Credible"
+    else:
+        label = "Fake"
+
+    return label, confidence

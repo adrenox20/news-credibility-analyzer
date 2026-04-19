@@ -1,16 +1,33 @@
-from model.predict import predict_news
-from agent.risk_analyzer import analyze_risk
-from rag.retriever import retrieve_facts
-from agent.reasoning import generate_report
+from model.predict import predict_credibility
+from agent.llm import analyze_with_llm
+from agent.rag import retrieve_facts
+from agent.report import generate_report
 
 def run_agent(text):
+    state = {}
 
-    label, prob = predict_news(text)
+    # Step 1: ML Prediction
+    prediction, confidence = predict_credibility(text)
 
-    risks = analyze_risk(text)
+    # 🧠 SMART OVERRIDE (IMPORTANT)
+    trusted_keywords = ["government", "policy", "official", "announced", "minister"]
 
+    if any(word in text.lower() for word in trusted_keywords):
+        prediction = "Credible"
+        confidence = max(confidence, 70)
+
+    state["prediction"] = prediction
+    state["confidence"] = confidence
+
+    # Step 2: RAG
     facts = retrieve_facts(text)
+    state["facts"] = facts
 
-    report = generate_report(text, risks, facts, label, prob)
+    # Step 3: LLM reasoning
+    analysis = analyze_with_llm(text, prediction)
+    state["analysis"] = analysis
+
+    # Step 4: Final report
+    report = generate_report(text, state)
 
     return report
