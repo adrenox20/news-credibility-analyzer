@@ -1,19 +1,20 @@
 import pickle
+import os
 
-model = pickle.load(open("model/model.pkl", "rb"))
-vectorizer = pickle.load(open("model/vectorizer.pkl", "rb"))
+MODEL_PATH = "model/model.pkl"
+VECTORIZER_PATH = "model/vectorizer.pkl"
+
+def load_model():
+    with open(MODEL_PATH, "rb") as f:
+        model = pickle.load(f)
+    with open(VECTORIZER_PATH, "rb") as f:
+        vectorizer = pickle.load(f)
+    return model, vectorizer
+
+model, vectorizer = load_model()
 
 def predict_news(text):
-
-    vec = vectorizer.transform([text])
-
-    prediction = model.predict(vec)[0]
-    probabilities = model.predict_proba(vec)[0]
-    confidence = max(probabilities)
-
-    if prediction == 1:
-        label = "Credible"
-    else:
-        label = "Fake"
-
-    return label, confidence, probabilities
+    X = vectorizer.transform([text])
+    pred = model.predict(X)[0]
+    prob = model.predict_proba(X)[0]
+    return pred, max(prob), prob
