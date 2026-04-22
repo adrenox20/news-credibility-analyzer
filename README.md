@@ -7,7 +7,7 @@ A complete end-to-end AI system that analyzes news articles and determines wheth
 
 ## 🚀 Live Demo
 
-Streamlit App: https://adrenox20-news-credibility-analyzer.streamlit.app  
+Streamlit App: https://news-credibility-analyzer-newton-project.streamlit.app/ 
 GitHub Repository: https://github.com/adrenox20/news-credibility-analyzer  
 
 ---
